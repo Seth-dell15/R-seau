@@ -125,3 +125,88 @@ sudo firewall-cmd --permanent --add-port=22/tcp
 success
 
 ```
+
+☀️ Installez et configurez un serveur DHCP sur la machine routeur.tp5.b1
+
+```powershell
+
+[hugo@box ~]$ sudo nano /etc/dhcp/dhcpd.conf
+[hugo@box ~]$ sudo systemctl enable --now dhcpd
+[hugo@box ~]$ sudo firewall-cmd --add-service=dhcp
+Warning: ALREADY_ENABLED: 'dhcp' already in 'public'
+success
+[hugo@box ~]$ sudo firewall-cmd --runtime-to-permanent
+success
+
+# Nom de domaine du serveur
+option domain-name "srv.world";
+
+# Adresse du serveur DNS
+option domain-name-servers 1.1.1.1;
+
+# Durée de bail par défaut en secondes
+default-lease-time 600;
+
+# Durée maximale du bail en secondes
+max-lease-time 7200;
+
+# Ce serveur DHCP est déclaré comme étant valide
+authoritative;
+
+# Configurer le réseau sur la carte host-only (enp0s8)
+subnet 10.5.1.0 netmask 255.255.255.0 {
+    # Plage d'adresses IP à attribuer
+    range dynamic-bootp 10.5.1.137 10.5.1.237;
+
+    # Adresse de broadcast
+    option broadcast-address 10.5.1.255;
+
+    # Passerelle par défaut (l'adresse de ta machine en host-only)
+    option routers 10.5.1.254;
+}
+
+```
+
+☀️ Créez une nouvelle machine client client3.tp5.b1
+
+```powershell
+
+Static hostname: client3
+2: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:d6:69:d8 brd ff:ff:ff:ff:ff:ff
+    inet 10.5.1.137/24 metric 100 brd 10.5.1.255 scope global dynamic enp0s8
+       valid_lft 600sec preferred_lft 600sec
+    inet6 fe80::a00:27ff:fed6:69d8/64 scope link 
+       valid_lft forever preferred_lft forever
+
+Oct 16 12:12:11 box dhcpd[1833]: DHCPDISCOVER from 08:00:27:d6:69:d8 (client3) via enp0s8
+Oct 16 12:12:11 box dhcpd[1833]: DHCPOFFER on 10.5.1.137 to 08:00:27:d6:69:d8 (client3) via enp0s8
+Oct 16 12:12:11 box dhcpd[1833]: DHCPREQUEST for 10.5.1.137 (10.5.1.254) from 08:00:27:d6:69:d8 (client>
+Oct 16 12:12:11 box dhcpd[1833]: DHCPACK on 10.5.1.137 to 08:00:27:d6:69:d8 (client3) via enp0s8
+
+```
+
+☀️ Consultez le bail DHCP qui a été créé pour notre client
+
+```powershell
+
+lease 10.5.1.137 {
+  starts 3 2024/10/16 10:59:40;
+  ends 3 2024/10/16 11:09:40;
+  cltt 3 2024/10/16 10:59:40;
+  binding state active;
+  next binding state free;
+  rewind binding state free;
+  hardware ethernet 08:00:27:d6:69:d8;
+  uid "\377\257\201\217}\000\002\000\000\253\021G\343]\321D%`^";
+  client-hostname "client3";
+
+```
+
+☀️ Confirmez qu'il s'agit bien de la bonne adresse MAC
+
+```powershell
+
+link/ether 08:00:27:d6:69:d8 brd ff:ff:ff:ff:ff:ff
+
+```
